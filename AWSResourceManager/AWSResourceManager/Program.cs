@@ -26,20 +26,6 @@ class Program
             var credentials = new BasicAWSCredentials(keys[0], keys[1]);
 
             ec2Client = new AmazonEC2Client(credentials, RegionEndpoint.APNortheast2);
-
-            var request = new DescribeInstancesRequest();
-
-            // EC2 인스턴스 리스트 가져오기
-            var response = await ec2Client.DescribeInstancesAsync(request);
-
-            // 인스턴스 정보 출력
-            foreach (var reservation in response.Reservations)
-            {
-                foreach (var instance in reservation.Instances)
-                {
-                    Console.WriteLine($"Instance ID: {instance.InstanceId}, State: {instance.State.Name}");
-                }
-            }
         }
         catch (Exception e)
         {
@@ -67,7 +53,7 @@ class Program
             Console.WriteLine("                                 99. quit                   ");
             Console.WriteLine("------------------------------------------------------------");
 
-            Console.WriteLine("Enter an integer: ");
+            Console.Write("Enter an integer: ");
             string menu = Console.ReadLine();
 
             if (int.TryParse(menu, out int menuId))
@@ -75,7 +61,7 @@ class Program
                 switch (menuId)
                 {
                     case 1:
-                        ListInstances();
+                        await ListInstances();
                         break;
 
                     case 2:
@@ -118,9 +104,27 @@ class Program
         }
     }
 
-    public static void ListInstances()
+    public async static Task ListInstances()
     {
+        Console.WriteLine("Listing instances......");
 
+        var request = new DescribeInstancesRequest();
+
+        // EC2 인스턴스 리스트 가져오기
+        var response = await ec2Client.DescribeInstancesAsync(request);
+
+        // 인스턴스 정보 출력
+        foreach (var reservation in response.Reservations)
+        {
+            foreach (var instance in reservation.Instances)
+            {
+                Console.WriteLine($"[id]  {instance.InstanceId}, " +
+                    $"[AMI] {instance.ImageId}, " +
+                    $"[type] {instance.InstanceType}, " +
+                    $"[state] {instance.State.Name}, " +
+                    $"[monitoring state] {instance.Monitoring.State}");
+            }
+        }
     }
 
     public static void ListAvailableZones()
