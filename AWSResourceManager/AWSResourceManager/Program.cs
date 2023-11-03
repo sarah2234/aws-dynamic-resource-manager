@@ -9,7 +9,7 @@ class Program
 {
     private static AmazonEC2Client ec2Client;
 
-    static async Task Main(string[] args)
+    private static async Task InitializeEC2Client()
     {
         string accessKeyFilePath = @"E:\2020039075_accessKeys.csv";
 
@@ -46,6 +46,12 @@ class Program
             Console.WriteLine(e);
         }
 
+    }
+
+    static async Task Main(string[] args)
+    {
+        await InitializeEC2Client();
+
         while (true)
         {
             Console.WriteLine("                                                            ");
@@ -69,27 +75,35 @@ class Program
                 switch (menuId)
                 {
                     case 1:
+                        ListInstances();
                         break;
 
                     case 2:
+                        ListAvailableZones();
                         break;
 
                     case 3:
+                        StartInstance();
                         break;
 
                     case 4:
+                        ListAvailableRegions();
                         break;
 
                     case 5:
+                        StopInstance();
                         break;
 
                     case 6:
+                        CreateInstance();
                         break;
 
                     case 7:
+                        RebootInstance();
                         break;
 
                     case 8:
+                        ListImages();
                         break;
 
                     case 99:
@@ -102,5 +116,45 @@ class Program
                 }
             }
         }
+    }
+
+    public static void ListInstances()
+    {
+
+    }
+
+    public static void ListAvailableZones()
+    {
+
+    }
+
+    public static void StartInstance()
+    {
+
+    }
+
+    public static void ListAvailableRegions()
+    {
+
+    }
+
+    public static void StopInstance()
+    {
+
+    }
+
+    public static void CreateInstance()
+    {
+
+    }
+
+    public static void RebootInstance()
+    {
+
+    }
+
+    public static void ListImages()
+    {
+
     }
 }
