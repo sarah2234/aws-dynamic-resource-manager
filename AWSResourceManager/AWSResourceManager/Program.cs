@@ -57,6 +57,7 @@ class Program
 
             if (int.TryParse(menu, out int menuId))
             {
+                string instanceId;
                 switch (menuId)
                 {
                     case 1:
@@ -69,8 +70,8 @@ class Program
 
                     case 3:
                         Console.Write("Enter instance id: ");
-                        string instanceId = Console.ReadLine();
-                        if (instanceId != null)
+                        instanceId = Console.ReadLine();
+                        if (!string.IsNullOrWhiteSpace(instanceId))
                             await StartInstance(instanceId);
                         break;
 
@@ -79,7 +80,10 @@ class Program
                         break;
 
                     case 5:
-                        StopInstance();
+                        Console.Write("Enter instance id: ");
+                        instanceId = Console.ReadLine();
+                        if (!string.IsNullOrWhiteSpace(instanceId))
+                            await StopInstance(instanceId);
                         break;
 
                     case 6:
@@ -187,9 +191,23 @@ class Program
         }
     }
 
-    public static void StopInstance()
+    public static async Task StopInstance(string instanceId)
     {
+        var request = new StopInstancesRequest
+        {
+            InstanceIds = new List<string> { instanceId }
+        };
 
+        try
+        {
+            var response = await ec2Client.StopInstancesAsync(request);
+
+            Console.WriteLine($"Successfully stop instance {instanceId}");
+        }
+        catch (AmazonEC2Exception e)
+        {
+            Console.WriteLine($"Exception occurred: {e.Message}");
+        }
     }
 
     public static void CreateInstance()
