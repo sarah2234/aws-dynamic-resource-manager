@@ -58,6 +58,7 @@ class Program
             if (int.TryParse(menu, out int menuId))
             {
                 string instanceId;
+                string amiId;
                 switch (menuId)
                 {
                     case 1:
@@ -87,7 +88,10 @@ class Program
                         break;
 
                     case 6:
-                        CreateInstance();
+                        Console.Write("Enter AMI id: ");
+                        amiId = Console.ReadLine();
+                        if (!string.IsNullOrWhiteSpace(amiId))
+                            await CreateInstance(amiId);
                         break;
 
                     case 7:
@@ -210,9 +214,27 @@ class Program
         }
     }
 
-    public static void CreateInstance()
+    public static async Task CreateInstance(string amiId)
     {
+        var request = new RunInstancesRequest
+        {
+            ImageId = amiId,
+            InstanceType = InstanceType.T2Micro,
+            MaxCount = 1,
+            MinCount = 1
+        };
 
+        try
+        {
+            var response = await ec2Client.RunInstancesAsync(request);
+            var reservationId = response.Reservation.Instances[0].InstanceId;
+
+            Console.WriteLine($"Successfully started EC2 instance {reservationId} based on AMI {amiId}");
+        }
+        catch (AmazonEC2Exception e)
+        {
+            Console.WriteLine($"Failed to create an instance ({e.Message})");
+        }
     }
 
     public static void RebootInstance()
