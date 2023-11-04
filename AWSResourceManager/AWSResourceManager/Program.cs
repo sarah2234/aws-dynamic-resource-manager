@@ -102,7 +102,7 @@ class Program
                         break;
 
                     case 8:
-                        ListImages();
+                        await ListImages();
                         break;
 
                     case 99:
@@ -261,8 +261,27 @@ class Program
         }
     }
 
-    public static void ListImages()
+    public static async Task ListImages()
     {
+        Console.WriteLine("Listing images......");
 
+        var request = new DescribeImagesRequest
+        {
+            Filters = new List<Filter>
+            {
+                new Filter
+                {
+                    Name = "name",
+                    Values = new List<string> { "aws-htcondor-slave" }
+                }
+            }
+        };
+
+        var response = await ec2Client.DescribeImagesAsync(request);
+
+        foreach (var image in response.Images)
+        {
+            Console.WriteLine($"[image id] {image.ImageId}, [name] {image.Name}, [owner] {image.OwnerId}");
+        }
     }
 }
