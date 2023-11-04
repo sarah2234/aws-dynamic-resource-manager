@@ -95,7 +95,10 @@ class Program
                         break;
 
                     case 7:
-                        RebootInstance();
+                        Console.Write("Enter instance id: ");
+                        instanceId = Console.ReadLine();
+                        if (!string.IsNullOrWhiteSpace(instanceId))
+                            await RebootInstance(instanceId);
                         break;
 
                     case 8:
@@ -178,7 +181,7 @@ class Program
         }
         catch (AmazonEC2Exception e)
         {
-            Console.WriteLine($"Failed to start instance ({e.Message})");
+            Console.WriteLine($"Failed to start the instance {instanceId} ({e.Message})");
         }
     }
 
@@ -210,7 +213,7 @@ class Program
         }
         catch (AmazonEC2Exception e)
         {
-            Console.WriteLine($"Exception occurred: {e.Message}");
+            Console.WriteLine($"Failed to stop the instance {instanceId} ({e.Message})");
         }
     }
 
@@ -233,13 +236,29 @@ class Program
         }
         catch (AmazonEC2Exception e)
         {
-            Console.WriteLine($"Failed to create an instance ({e.Message})");
+            Console.WriteLine($"Failed to create the instance ({e.Message})");
         }
     }
 
-    public static void RebootInstance()
+    public static async Task RebootInstance(string instanceId)
     {
+        Console.WriteLine("Rebooting......" + instanceId);
 
+        var request = new RebootInstancesRequest
+        {
+            InstanceIds = new List<string> { instanceId }
+        };
+
+        try
+        {
+            var response = await ec2Client.RebootInstancesAsync(request);
+
+            Console.WriteLine("Successfully rebooted instance " + instanceId);
+        }
+        catch (AmazonEC2Exception e) 
+        {
+            Console.WriteLine($"Failed to reboot the instance {instanceId} ({e.Message})");
+        }
     }
 
     public static void ListImages()
