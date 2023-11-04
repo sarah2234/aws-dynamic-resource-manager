@@ -65,7 +65,7 @@ class Program
                         break;
 
                     case 2:
-                        ListAvailableZones();
+                        await ListAvailableZones();
                         break;
 
                     case 3:
@@ -127,9 +127,30 @@ class Program
         }
     }
 
-    public static void ListAvailableZones()
+    public static async Task ListAvailableZones()
     {
+        Console.WriteLine("Available zones......");
 
+        try
+        {
+            var availableZonesResponse = await ec2Client.DescribeAvailabilityZonesAsync();
+
+            foreach (var availabilityZone in availableZonesResponse.AvailabilityZones)
+            {
+                Console.WriteLine($"[id] {availabilityZone.ZoneId}, " +
+                    $"[region] {availabilityZone.RegionName.PadLeft(15)}, " +
+                    $"[zone] {availabilityZone.RegionName.PadLeft(15)}");
+            }
+
+            Console.WriteLine($"You have access to {availableZonesResponse.AvailabilityZones.Count} Availability Zones.");
+        }
+        catch (AmazonServiceException e)
+        {
+            Console.WriteLine("Caught Exception: " + e.Message);
+            Console.WriteLine("Response Status Code: " + e.StatusCode);
+            Console.WriteLine("Error Code: " + e.ErrorCode);
+            Console.WriteLine("Request ID: " + e.RequestId);
+        }
     }
 
     public static void StartInstance()
