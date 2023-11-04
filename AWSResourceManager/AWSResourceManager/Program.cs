@@ -75,7 +75,7 @@ class Program
                         break;
 
                     case 4:
-                        ListAvailableRegions();
+                        await ListAvailableRegions();
                         break;
 
                     case 5:
@@ -112,10 +112,8 @@ class Program
 
         var request = new DescribeInstancesRequest();
 
-        // EC2 인스턴스 리스트 가져오기
         var response = await ec2Client.DescribeInstancesAsync(request);
 
-        // 인스턴스 정보 출력
         foreach (var reservation in response.Reservations)
         {
             foreach (var instance in reservation.Instances)
@@ -176,9 +174,17 @@ class Program
         }
     }
 
-    public static void ListAvailableRegions()
+    public static async Task ListAvailableRegions()
     {
+        Console.WriteLine("Available regions......");
 
+        var response = await ec2Client.DescribeRegionsAsync();
+        
+        foreach (var region in response.Regions)
+        {
+            Console.WriteLine($"[region] {region.RegionName.PadLeft(15)}, " +
+                $"[endpoint] {region.Endpoint}");
+        }
     }
 
     public static void StopInstance()
