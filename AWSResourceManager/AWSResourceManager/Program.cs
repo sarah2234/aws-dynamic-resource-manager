@@ -46,7 +46,6 @@ class Program
             Console.WriteLine("           Amazon AWS Control Panel using SDK               ");
             Console.WriteLine("------------------------------------------------------------");
             Console.WriteLine("  1. list instance                2. available zones        ");
-            Console.WriteLine("  1. list instance                2. available zones        ");
             Console.WriteLine("  3. start instance               4. available regions      ");
             Console.WriteLine("  5. stop instance                6. create instance        ");
             Console.WriteLine("  7. reboot instance              8. list images            ");
@@ -69,7 +68,10 @@ class Program
                         break;
 
                     case 3:
-                        StartInstance();
+                        Console.Write("Enter instance id: ");
+                        string instanceId = Console.ReadLine();
+                        if (instanceId != null)
+                            await StartInstance(instanceId);
                         break;
 
                     case 4:
@@ -133,16 +135,16 @@ class Program
 
         try
         {
-            var availableZonesResponse = await ec2Client.DescribeAvailabilityZonesAsync();
+            var response = await ec2Client.DescribeAvailabilityZonesAsync();
 
-            foreach (var availabilityZone in availableZonesResponse.AvailabilityZones)
+            foreach (var availabilityZone in response.AvailabilityZones)
             {
                 Console.WriteLine($"[id] {availabilityZone.ZoneId}, " +
                     $"[region] {availabilityZone.RegionName.PadLeft(15)}, " +
                     $"[zone] {availabilityZone.RegionName.PadLeft(15)}");
             }
 
-            Console.WriteLine($"You have access to {availableZonesResponse.AvailabilityZones.Count} Availability Zones.");
+            Console.WriteLine($"You have access to {response.AvailabilityZones.Count} Availability Zones.");
         }
         catch (AmazonServiceException e)
         {
@@ -153,9 +155,25 @@ class Program
         }
     }
 
-    public static void StartInstance()
+    public static async Task StartInstance(string instanceId)
     {
+        Console.WriteLine($"Starting...... {instanceId}");
 
+        var request = new StartInstancesRequest
+        {
+            InstanceIds = new List<string> { instanceId }
+        };
+
+        try
+        {
+            var response = await ec2Client.StartInstancesAsync(request);
+
+            Console.WriteLine($"Successfully started instance {instanceId}");
+        }
+        catch (AmazonEC2Exception e)
+        {
+            Console.WriteLine($"Failed to start instance ({e.Message})");
+        }
     }
 
     public static void ListAvailableRegions()
