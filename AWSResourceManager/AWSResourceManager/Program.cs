@@ -53,7 +53,7 @@ class Program
             Console.WriteLine("  3. start instance               4. available regions      ");
             Console.WriteLine("  5. stop instance                6. create instance        ");
             Console.WriteLine("  7. reboot instance              8. list images            ");
-            Console.WriteLine("  0. input command                                          ");
+            Console.WriteLine("  -1. terminate instance          0. input command          ");
             Console.WriteLine("                                 99. quit                   ");
             Console.WriteLine("------------------------------------------------------------");
 
@@ -109,6 +109,13 @@ class Program
 
                     case 8:
                         await ListImages();
+                        break;
+
+                    case -1:
+                        Console.Write("Enter instance id: ");
+                        instanceId = Console.ReadLine();
+                        if (!string.IsNullOrWhiteSpace(instanceId))
+                            await TerminateInstance(instanceId);
                         break;
 
                     case 0:
@@ -375,6 +382,37 @@ class Program
                 Console.WriteLine($"Failed to execute the command ({e.Message})");
             }
         }
-        
+    }
+
+    public static async Task TerminateInstance(string instanceId)
+    {
+        Console.WriteLine("<Warning!> Terminating " + instanceId);
+        Console.WriteLine("To confirm that you want to terminate the instances, type 'yes'. " +
+            "Instances with termination protection enabled will not be terminated. " +
+            "Terminating the instance cannot be undone.");
+        Console.Write(">> ");
+
+        var confirmTermination = Console.ReadLine();
+        if (confirmTermination != "yes")
+        {
+            Console.WriteLine($"\nIncorrect input '{confirmTermination}'. Stop termination");
+            return;
+        }
+
+        var request = new TerminateInstancesRequest
+        {
+            InstanceIds = new List<string> { instanceId }
+        };
+
+        try
+        {
+            var response = await ec2Client.TerminateInstancesAsync(request);
+
+            Console.WriteLine("Successfully terminated instance " + instanceId);
+        }
+        catch (AmazonEC2Exception e)
+        {
+            Console.WriteLine($"Failed to terminate the instance {instanceId} ({e.Message})");
+        }
     }
 }
