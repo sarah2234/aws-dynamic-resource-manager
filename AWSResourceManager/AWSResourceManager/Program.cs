@@ -4,10 +4,14 @@ using Amazon;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 using Amazon.Runtime;
+using Amazon.SimpleSystemsManagement;
+using Amazon.SimpleSystemsManagement.Model;
 
 class Program
 {
     private static AmazonEC2Client ec2Client;
+    private static BasicAWSCredentials credentials;
+    private static RegionEndpoint regionEndpoint = RegionEndpoint.APNortheast2;
 
     private static async Task InitializeEC2Client()
     {
@@ -23,9 +27,9 @@ class Program
             keys[0] = keys[0].Trim();
             keys[1] = keys[1].Trim();
 
-            var credentials = new BasicAWSCredentials(keys[0], keys[1]);
+            credentials = new BasicAWSCredentials(keys[0], keys[1]);
 
-            ec2Client = new AmazonEC2Client(credentials, RegionEndpoint.APNortheast2);
+            ec2Client = new AmazonEC2Client(credentials, regionEndpoint);
         }
         catch (Exception e)
         {
@@ -49,6 +53,7 @@ class Program
             Console.WriteLine("  3. start instance               4. available regions      ");
             Console.WriteLine("  5. stop instance                6. create instance        ");
             Console.WriteLine("  7. reboot instance              8. list images            ");
+            Console.WriteLine("  0. input command                                          ");
             Console.WriteLine("                                 99. quit                   ");
             Console.WriteLine("------------------------------------------------------------");
 
@@ -59,6 +64,7 @@ class Program
             {
                 string instanceId;
                 string amiId;
+
                 switch (menuId)
                 {
                     case 1:
@@ -105,6 +111,13 @@ class Program
                         await ListImages();
                         break;
 
+                    case 0:
+                        Console.Write("Enter instance id: ");
+                        instanceId = Console.ReadLine();
+                        if (!string.IsNullOrWhiteSpace(instanceId))
+                            await ExecuteCommand(instanceId);
+                        break;
+
                     case 99:
                         Console.WriteLine("Bye!");
                         return;
@@ -113,7 +126,7 @@ class Program
                         Console.WriteLine("Concentration!");
                         break;
                 }
-            }
+            }          
         }
     }
 
@@ -283,5 +296,85 @@ class Program
         {
             Console.WriteLine($"[image id] {image.ImageId}, [name] {image.Name}, [owner] {image.OwnerId}");
         }
+    }
+
+    public static async Task<Instance> FindInstance(string instanceId)
+    {
+        var request = new DescribeInstancesRequest
+        { InstanceIds = new List<string> { instanceId } };
+
+        try
+        {
+            var response = await ec2Client.DescribeInstancesAsync(request);
+
+            return response.Reservations[0].Instances[0];
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Cannot find the instance {instanceId}");
+        }
+
+        return null;
+    }
+
+    public static async Task ExecuteCommand(string instanceId)
+    {
+        if (await FindInstance(instanceId) == null)
+        {
+            return;
+        }    
+
+        var ssmClient = new AmazonSimpleSystemsManagementClient(credentials, regionEndpoint);
+
+        while (true)
+        {
+            Console.Write("$ ");
+            string command = Console.ReadLine();
+
+            if (command == "exit")
+                break;
+
+            var commandRequest = new SendCommandRequest
+            {
+                InstanceIds = new List<string> { instanceId },
+                DocumentName = "AWS-RunShellScript",
+                Parameters = new Dictionary<string, List<string>>
+                {
+                    { "commands", new List<string> { command } }
+                }
+            };
+
+            try
+            {
+                var commandResponse = await ssmClient.SendCommandAsync(commandRequest);
+
+
+                var commandInvocationsRequest = new ListCommandInvocationsRequest
+                {
+                    InstanceId = instanceId,
+                    CommandId = commandResponse.Command.CommandId
+                };
+
+                var commandInvocationsResponse = await ssmClient.ListCommandInvocationsAsync(commandInvocationsRequest);
+
+                foreach (var invocations in commandInvocationsResponse.CommandInvocations)
+                {
+                    var outputRequest = new GetCommandInvocationRequest
+                    {
+                        CommandId = commandResponse.Command.CommandId,
+                        InstanceId = invocations.InstanceId
+                    };
+
+                    var outputResponse = await ssmClient.GetCommandInvocationAsync(outputRequest);
+
+                    Console.WriteLine($"output: {outputResponse.StandardOutputContent}");
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Failed to execute the command ({e.Message})");
+            }
+        }
+        
     }
 }
