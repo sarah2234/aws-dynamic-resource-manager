@@ -362,6 +362,7 @@ class Program
                     CommandId = commandResponse.Command.CommandId
                 };
 
+                await Task.Delay(1000);
                 var commandInvocationsResponse = await ssmClient.ListCommandInvocationsAsync(commandInvocationsRequest);
 
                 foreach (var invocations in commandInvocationsResponse.CommandInvocations)
@@ -374,7 +375,7 @@ class Program
 
                     var outputResponse = await ssmClient.GetCommandInvocationAsync(outputRequest);
 
-                    Console.WriteLine($"output: {outputResponse.StandardOutputContent}");
+                    Console.WriteLine($"{outputResponse.StandardOutputContent}");
                 }
             }
             catch (Exception e)
